@@ -4,35 +4,17 @@ require('dotenv-safe').config();
 
 const { gray, green, red } = require('chalk');
 const {
-	Contract,
   providers: { JsonRpcProvider },
   Wallet,
   utils,
 } = require('ethers');
 const { LedgerSigner } = require('@ethersproject/hardware-wallets');
-const { getContractInterface } = require('@eth-optimism/contracts/build/src/contract-defs')
-
-const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
 const l2URL = process.env.L2_URL
-const l1URL = process.env.L1_URL
 const l2Provider = new JsonRpcProvider(l2URL)
-const l1Provider = new JsonRpcProvider(l1URL)
-const addressToWhitelist = process.env.ADDRESS_TO_WHITELIST
 const USE_LEDGER = process.env.USE_LEDGER || false;
 let l2Wallet
 let l2WalletAddress
-
-let l1Addresses = {}
-let l2Addresses = {
-  'OVM_ExecutionManager': '0xdeaddeaddeaddeaddeaddeaddeaddeaddead0005',
-  'OVM_L2CrossDomainMessenger': '0x4200000000000000000000000000000000000007',
-  'OVM_DeployerWhitelist': '0x4200000000000000000000000000000000000002',
-}
-
-const loadContract = (name, isL2) => {
-  return new Contract(isL2 ? l2Addresses[name] : l1Addresses[name], getContractInterface(name), isL2 ? l2Provider : l1Provider)
-}
 
 ;(async () => {
   if (USE_LEDGER) {
@@ -52,30 +34,9 @@ const loadContract = (name, isL2) => {
   let tx = {
     to: `0x${'00'.repeat(20)}`,
     value: 0,
-    nonce: 12,
+    nonce: 11,
+    gasPrice: 175000000000 //175 gwei
   }
   const receipt = await l2Wallet.sendTransaction(tx)
   console.log(receipt)
-  // const deployerWhitelist  = loadContract('OVM_DeployerWhitelist', true)
-  // let whitelistOwner = await deployerWhitelist.callStatic.getOwner()
-  // console.log('Whitelist Owner:', whitelistOwner)
-  // if (whitelistOwner === '0x0000000000000000000000000000000000000000') {
-  //   console.log('Initializing Whitelist owner to:', l2WalletAddress)
-  //   const txRes = await deployerWhitelist.connect(l2Wallet).initialize(l2WalletAddress, false)
-  //   await txRes.wait()
-  //   whitelistOwner = await deployerWhitelist.callStatic.getOwner()
-  //   console.log('initialized owner. tx hash:', txRes.hash)
-  //   console.log('New Whitelist Owner:', whitelistOwner)
-  // }
-  // if (whitelistOwner !== l2WalletAddress){
-  //   throw new Error(`Current l2 wallet address ${l2WalletAddress} is not the whitelist owner. Expected ${whitelistOwner}`)
-  // }
-  
-  // console.log('Whitelisting deployer address:', addressToWhitelist)
-  // const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true)
-  // await txRes.wait()
-  // console.log('whitelisted', addressToWhitelist, '- Tx hash:', txRes.hash)
-  // const isDeployerAllowed = await deployerWhitelist.callStatic.isDeployerAllowed(addressToWhitelist)
-  // console.log('Is', addressToWhitelist, 'whitelisted?', isDeployerAllowed)
-
 })()
