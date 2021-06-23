@@ -10,7 +10,7 @@ const {
   utils,
 } = require('ethers');
 const { LedgerSigner } = require('@ethersproject/hardware-wallets');
-const { getContractInterface } = require('@eth-optimism/contracts/build/src/contract-defs')
+const { getContractInterface } = require('@eth-optimism/contracts')
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -39,7 +39,9 @@ const loadContract = (name, isL2) => {
     l2Wallet = new LedgerSigner(l2Provider, 'default', utils.defaultPath);
     console.log(l2Wallet)
     console.log('Connected to Ledger.')
+    console.log('getting address?')
     l2WalletAddress = await l2Wallet.getAddress()
+    console.log('got address?')
   } else  {
     if (typeof process.env.L2_USER_PRIVATE_KEY === 'undefined')
       throw new Error('Must pass whitelist owner key as L2_USER_PRIVATE_KEY');
@@ -49,30 +51,24 @@ const loadContract = (name, isL2) => {
   }
   console.log('connected to network', await l2Wallet.provider.getNetwork())
   console.log(gray('Current wallet address:'), green(l2WalletAddress))
-  let tx = {
-    to: `0x${'00'.repeat(20)}`,
-    value: 0,
-    nonce: 12,
+  
+  const deployerWhitelist  = loadContract('OVM_DeployerWhitelist', true)
+  let whitelistOwner = await deployerWhitelist.owner()
+  console.log('Whitelist Owner:', whitelistOwner)
+  if (whitelistOwner === '0x0000000000000000000000000000000000000000') {
+    console.log('Initializing Whitelist owner to:', l2WalletAddress)
+    const txRes = await deployerWhitelist.connect(l2Wallet).initialize(l2WalletAddress, false, {gasPrice: 0})
+    await txRes.wait()
+    whitelistOwner = await deployerWhitelist.owner()
+    console.log('initialized owner. tx hash:', txRes.hash)
+    console.log('New Whitelist Owner:', whitelistOwner)
   }
-  const receipt = await l2Wallet.sendTransaction(tx)
-  console.log(receipt)
-  // const deployerWhitelist  = loadContract('OVM_DeployerWhitelist', true)
-  // let whitelistOwner = await deployerWhitelist.callStatic.getOwner()
-  // console.log('Whitelist Owner:', whitelistOwner)
-  // if (whitelistOwner === '0x0000000000000000000000000000000000000000') {
-  //   console.log('Initializing Whitelist owner to:', l2WalletAddress)
-  //   const txRes = await deployerWhitelist.connect(l2Wallet).initialize(l2WalletAddress, false)
-  //   await txRes.wait()
-  //   whitelistOwner = await deployerWhitelist.callStatic.getOwner()
-  //   console.log('initialized owner. tx hash:', txRes.hash)
-  //   console.log('New Whitelist Owner:', whitelistOwner)
-  // }
-  // if (whitelistOwner !== l2WalletAddress){
-  //   throw new Error(`Current l2 wallet address ${l2WalletAddress} is not the whitelist owner. Expected ${whitelistOwner}`)
-  // }
+  if (whitelistOwner !== l2WalletAddress){
+    throw new Error(`Current l2 wallet address ${l2WalletAddress} is not the whitelist owner. Expected ${whitelistOwner}`)
+  }
   
   // console.log('Whitelisting deployer address:', addressToWhitelist)
-  // const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true)
+  // const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true, {gasPrice: 0})
   // await txRes.wait()
   // console.log('whitelisted', addressToWhitelist, '- Tx hash:', txRes.hash)
   // const isDeployerAllowed = await deployerWhitelist.callStatic.isDeployerAllowed(addressToWhitelist)
