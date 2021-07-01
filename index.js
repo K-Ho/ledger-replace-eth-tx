@@ -67,11 +67,11 @@ const loadContract = (name, isL2) => {
     throw new Error(`Current l2 wallet address ${l2WalletAddress} is not the whitelist owner. Expected ${whitelistOwner}`)
   }
   
-  // console.log('Whitelisting deployer address:', addressToWhitelist)
-  // const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true, {gasPrice: 0})
-  // await txRes.wait()
-  // console.log('whitelisted', addressToWhitelist, '- Tx hash:', txRes.hash)
-  // const isDeployerAllowed = await deployerWhitelist.callStatic.isDeployerAllowed(addressToWhitelist)
-  // console.log('Is', addressToWhitelist, 'whitelisted?', isDeployerAllowed)
+  console.log('Whitelisting deployer address:', addressToWhitelist)
+  const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true, {gasPrice: 0})
+  await txRes.wait()
+  console.log('whitelisted', addressToWhitelist, '- Tx hash:', txRes.hash)
+  const isDeployerAllowed = await deployerWhitelist.callStatic.isDeployerAllowed(addressToWhitelist)
+  console.log('Is', addressToWhitelist, 'whitelisted?', isDeployerAllowed)
 
 })()
