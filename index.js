@@ -57,7 +57,7 @@ const loadContract = (name, isL2) => {
   console.log('Whitelist Owner:', whitelistOwner)
   if (whitelistOwner === '0x0000000000000000000000000000000000000000') {
     console.log('Initializing Whitelist owner to:', l2WalletAddress)
-    const txRes = await deployerWhitelist.connect(l2Wallet).initialize(l2WalletAddress, false, {gasPrice: 0})
+    const txRes = await deployerWhitelist.connect(l2Wallet).initialize(l2WalletAddress, false)
     await txRes.wait()
     whitelistOwner = await deployerWhitelist.owner()
     console.log('initialized owner. tx hash:', txRes.hash)
@@ -68,7 +68,7 @@ const loadContract = (name, isL2) => {
   }
   
   console.log('Whitelisting deployer address:', addressToWhitelist)
-  const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true, {gasPrice: 0})
+  const txRes = await deployerWhitelist.connect(l2Wallet).setWhitelistedDeployer(addressToWhitelist, true)
   await txRes.wait()
   console.log('whitelisted', addressToWhitelist, '- Tx hash:', txRes.hash)
   const isDeployerAllowed = await deployerWhitelist.callStatic.isDeployerAllowed(addressToWhitelist)
